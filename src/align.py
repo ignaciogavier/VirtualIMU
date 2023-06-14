@@ -109,10 +109,10 @@ def optimizeAlignment(
 
         # Adaptive median filter
         M, N = 3, 11
-        coordinatesLeft = adaptiveMedFilterTorch(coordinatesLeft, M, N, 0, 'constant')
-        coordinatesRight = adaptiveMedFilterTorch(coordinatesRight, M, N, 0, 'constant')
-        rotationsLeft = adaptiveMedFilterTorch(rotationsLeft, M, N, 0, 'constant')
-        rotationsRight = adaptiveMedFilterTorch(rotationsRight, M, N, 0, 'constant')
+        coordinatesLeft = adaptiveMedFilterTorch(coordinatesLeft, M, N, 0)
+        coordinatesRight = adaptiveMedFilterTorch(coordinatesRight, M, N, 0)
+        rotationsLeft = adaptiveMedFilterTorch(rotationsLeft, M, N, 0)
+        rotationsRight = adaptiveMedFilterTorch(rotationsRight, M, N, 0)
 
         # Derivatives
         accelLeft = torch.gradient(torch.gradient(coordinatesLeft, spacing=deltaT, edge_order=2, dim=0)[0], spacing=deltaT, edge_order=2, dim=0)[0]
@@ -160,9 +160,9 @@ def optimizeAlignment(
         # Write to file
         dataFrame = pd.DataFrame(
             np.concatenate([
-                timeVec[:,None].detach().numpy(),
-                accelLeftResampled.detach().numpy(), accelRightResampled.detach().numpy(),
-                gyroLeftResampled.detach().numpy(), gyroRightResampled.detach().numpy()
+                timeVecNew[:,None].detach().numpy(),
+                accelLeftResampled.detach().numpy().T, accelRightResampled.detach().numpy().T,
+                gyroLeftResampled.detach().numpy().T, gyroRightResampled.detach().numpy().T
             ], axis=1),
             columns=[
                 'time', 'acc_xF_left', 'acc_yF_left', 'acc_zF_left',
