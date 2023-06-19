@@ -185,3 +185,6 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# Hide data
+data/*

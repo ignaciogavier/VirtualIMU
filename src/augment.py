@@ -52,16 +52,16 @@ def augmentMonteCarlo(
         pF = pFMean + pFStd * torch.randn_like(pFStd)
         p0 = torch.stack([-pF, torch.zeros_like(pW), pW])
 
-        # Define interval of time of interest
-        tStart = tStartUsr
-        tStop = tStopUsr
-        
         # Retrieve wrist coordinates
         dataVid = np.genfromtxt(WristsCoordFileName, skip_header=1, delimiter=',')
 
         timeVec = torch.tensor(dataVid[:,0])
         deltaT = timeVec[1] - timeVec[0]
 
+        # Define interval of time of interest
+        tStart = max([tStartUsr, timeVec[0]])
+        tStop = min([tStopUsr, timeVec[-1]])
+        
         coordinatesLeft = torch.tensor(dataVid[:,1:4])
         coordinatesRight = torch.tensor(dataVid[:,13:16])
         rotationsLeft = torch.tensor(np.stack([dataVid[:,4:7], dataVid[:,7:10], dataVid[:,10:13]], 1))
@@ -139,7 +139,7 @@ def augmentMonteCarlo(
         # Write to file
         dataFrame = pd.DataFrame(
             np.concatenate([
-                timeVec[:,None].detach().numpy(),
+                timeVecNew[:,None].detach().numpy(),
                 accelLeftResampled.detach().numpy().T, accelRightResampled.detach().numpy().T,
                 gyroLeftResampled.detach().numpy().T, gyroRightResampled.detach().numpy().T
             ], axis=1),
