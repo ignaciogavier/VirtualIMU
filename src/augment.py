@@ -22,7 +22,7 @@ def augmentMonteCarlo(
     localCoordTransfGyrR = torch.tensor([[1, 0, 0], [0, 0, 1], [0, -1, 0]], dtype=torch.double),
     # Mean sensor alignment
     alphaWMean = torch.tensor([0.6, 0.6], dtype=torch.double),
-    alphaFMean = torch.tensor([-1.6, 1.6], dtype=torch.double),
+    alphaFMean = torch.tensor([-1.6, -1.6], dtype=torch.double),
     pWMean = torch.tensor([0.043, 0.043], dtype=torch.double),
     pFMean = torch.tensor([0.075, -0.075], dtype=torch.double),
     # Standard deviation sensor alignment
