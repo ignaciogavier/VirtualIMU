@@ -26,9 +26,9 @@ def optimizeAlignment(
     localCoordTransfGyrR = torch.tensor([[1, 0, 0], [0, 0, 1], [0, -1, 0]], dtype=torch.double),
     # Initial sensor alignment
     alphaW = torch.tensor([0.6, 0.6], requires_grad=True, dtype=torch.double),
-    alphaF = torch.tensor([-1.6, 1.6], requires_grad=True, dtype=torch.double),
+    alphaF = torch.tensor([-1.6, -1.6], requires_grad=True, dtype=torch.double),
     pW = torch.tensor([0.043, 0.043], requires_grad=True, dtype=torch.double),
-    pF = torch.tensor([0.075, 0.075], requires_grad=True, dtype=torch.double),
+    pF = torch.tensor([0.075, -0.075], requires_grad=True, dtype=torch.double),
     # Define optimizer method
     optimizerMethod = torch.optim.Adam,
     # Total number of iterations
