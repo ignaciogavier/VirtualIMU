@@ -24,7 +24,7 @@ def augmentMonteCarlo(
     alphaWMean = torch.tensor([0.6, 0.6], dtype=torch.double),
     alphaFMean = torch.tensor([-1.6, 1.6], dtype=torch.double),
     pWMean = torch.tensor([0.043, 0.043], dtype=torch.double),
-    pFMean = torch.tensor([0.075, 0.075], dtype=torch.double),
+    pFMean = torch.tensor([0.075, -0.075], dtype=torch.double),
     # Standard deviation sensor alignment
     alphaWStd = torch.tensor([0.2, 0.2], dtype=torch.double),
     alphaFStd = torch.tensor([0.22, 0.22], dtype=torch.double),
