@@ -2,8 +2,9 @@ import csv
 import cv2
 import mediapipe as mp
 import numpy as np
+import pandas as pd
 
-def extractWristCoordinates(
+def extractWristCoordinatesVideo(
         videoFile = 'data/video.mp4',
         coordinatesFile = 'data/wristCoord.csv'
 ):
@@ -17,6 +18,8 @@ def extractWristCoordinates(
 
     # Open the video file
     videoCapture = cv2.VideoCapture(videoFile)
+
+    # Open the CSV file
     csvFile = open(coordinatesFile, 'w', newline='')
     csvWriter = csv.writer(csvFile)
 
@@ -151,3 +154,82 @@ def extractWristCoordinates(
         # Exit the loop if the 'q' key is pressed
         if cv2.waitKey(1) == ord('q'):
             break
+
+
+def extractWristCoordinatesBVH(
+        BVHFile = 'data/capture.bvh',
+        coordinatesFile = 'data/wristCoord.csv'
+):
+    import bvhtoolbox as bvh
+    import transforms3d as t3d
+
+    # Open the BVH file
+    with open(BVHFile) as f:
+        BVHTree = bvh.BvhTree(f.read())
+    
+    # Compute Forward Kinematics
+    root = next(BVHTree.root.filter('ROOT'))
+    def get_world_positions(joint):
+        if joint.value[0] == 'End':
+            joint.world_transforms = np.tile(t3d.affines.compose(np.zeros(3), np.eye(3), np.ones(3)), (BVHTree.nframes, 1, 1))
+        else:
+            channels = BVHTree.joint_channels(joint.name)
+            axes_order = ''.join([ch[:1] for ch in channels if ch[1:] == 'rotation']).lower()  # FixMe: This isn't going to work when not all rotation channels are present
+            axes_order = 's' + axes_order[::-1]
+            joint.world_transforms = bvh.get_affines(BVHTree, joint.name, axes=axes_order)
+            
+        if joint != root:
+            # For joints substitute position for offsets.
+            offset = [float(o) for o in joint['OFFSET']]
+            joint.world_transforms[:, :3, 3] = offset
+            joint.world_transforms = np.matmul(joint.parent.world_transforms, joint.world_transforms)
+        
+        end = list(joint.filter('End'))
+        if end:
+            get_world_positions(end[0])  # There can be only one End Site per joint.
+        for child in joint.filter('JOINT'):
+            get_world_positions(child)
+    
+    get_world_positions(root)
+    
+    # Get time vector
+    sampleRate = int(1 / BVHTree.frame_time)
+    timeVec = np.arange(BVHTree.nframes, dtype=float)[:,None] / sampleRate
+    
+    # Get transforms
+    leftWristPosition = BVHTree.search('End', 'LeftForeArm_End')[0].world_transforms[:,:3,3] / 100
+    rightWristPosition = BVHTree.search('End', 'RightForeArm_End')[0].world_transforms[:,:3,3] / 100
+    leftWristRotation = BVHTree.search('End', 'LeftForeArm_End')[0].world_transforms[:,:3,:3].reshape(-1,9)
+    rightWristRotation = BVHTree.search('End', 'RightForeArm_End')[0].world_transforms[:,:3,:3].reshape(-1,9)
+    
+    # Write the data to the CSV file
+    data = pd.DataFrame(
+        np.concatenate([
+            timeVec,
+            leftWristPosition,
+            leftWristRotation,
+            rightWristPosition,
+            rightWristRotation
+        ], axis=1),
+        columns = [
+            'frame',
+            'p1L','p2L','p3L', # position left
+            'R11L','R12L','R13L', # rotation left
+            'R21L','R22L','R23L',
+            'R31L','R32L','R33L',
+            'p1R','p2R','p3R', # position right
+            'R11R','R12R','R13R', # rotation right
+            'R21R','R22R','R23R',
+            'R31R','R32R','R33R'
+        ])
+
+    data.to_csv(coordinatesFile, index=False)
+    
+
+
+if __name__ == '__main__':
+    for i in range(5):
+        extractWristCoordinatesBVH(
+            BVHFile = f'/Users/igavier/Documents/GitHub/VirtualIMU/data/captureOrig{i+1}.bvh',
+            coordinatesFile = f'/Users/igavier/Documents/GitHub/VirtualIMU/data/captureOrigWristCoord{i+1}.csv'
+        )

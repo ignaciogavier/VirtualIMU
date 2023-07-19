@@ -1,3 +1,7 @@
+import sys
+
+sys.path.append('/Users/igavier/Documents/GitHub/VirtualIMU/')
+
 import numpy as np
 import torch
 import pandas as pd
@@ -35,9 +39,6 @@ def augmentMonteCarlo(
     # Others
     verbose = True
 ):
-
-    timeVec = torch.arange(tStart, tStop, 1 / samplingRate, dtype=torch.float64)
-    T = len(timeVec)
 
     for aug in range(totalAug):
         alphaW = alphaWMean + alphaWStd * torch.randn_like(alphaWStd)
@@ -130,7 +131,7 @@ def augmentMonteCarlo(
         gyroRightFiltered = savGolFilterTorch(gyroRight, M, N, dim=0)
 
         # Interpolate to have the same sampling points as the reference
-        timeVecNew = torch.linspace(tStart, tStop, T)
+        timeVecNew = torch.arange(tStart, tStop, 1 / samplingRate, dtype=torch.float64)
         accelLeftResampled = interp1dTorch(timeVec, accelLeftFiltered, timeVecNew).transpose(0,1)
         accelRightResampled = interp1dTorch(timeVec, accelRightFiltered, timeVecNew).transpose(0,1)
         gyroLeftResampled = interp1dTorch(timeVec, gyroLeftFiltered, timeVecNew).transpose(0,1)
@@ -155,3 +156,35 @@ def augmentMonteCarlo(
         if verbose: print(f'Generated {aug+1}/{totalAug}')
     
     return
+
+if __name__ == '__main__':
+    for i in range(5):
+        augmentMonteCarlo(
+            # File names
+            WristsCoordFileName = f'/Users/igavier/Documents/GitHub/VirtualIMU/data/captureOrigWristCoord{i+1}.csv',
+            VidIMUdirName = f'/Users/igavier/Documents/GitHub/VirtualIMU/data/augmentedVidIMU{i+1}/',
+            # Temporal variables
+            tStartUsr = 0.,
+            tStopUsr = 5.,
+            samplingRate = 100.,
+            # Global coordinates transformations
+            globalCoordTransf = torch.tensor([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype=torch.double),
+            localCoordTransfAccL = torch.tensor([[1, 0, 0], [0, 0, -1], [0, 1, 0]], dtype=torch.double),
+            localCoordTransfAccR = torch.tensor([[-1, 0, 0], [0, 0, 1], [0, 1, 0]], dtype=torch.double),
+            localCoordTransfGyrL = torch.tensor([[-1, 0, 0], [0, 0, -1], [0, -1, 0]], dtype=torch.double),
+            localCoordTransfGyrR = torch.tensor([[1, 0, 0], [0, 0, 1], [0, -1, 0]], dtype=torch.double),
+            # Mean sensor alignment
+            alphaWMean = torch.tensor([0.6, 0.6], dtype=torch.double),
+            alphaFMean = torch.tensor([-1.6, -1.6], dtype=torch.double),
+            pWMean = torch.tensor([0.043, 0.043], dtype=torch.double),
+            pFMean = torch.tensor([0.075, -0.075], dtype=torch.double),
+            # Standard deviation sensor alignment
+            alphaWStd = torch.tensor([0.2, 0.2], dtype=torch.double),
+            alphaFStd = torch.tensor([0.22, 0.22], dtype=torch.double),
+            pWStd = torch.tensor([0.002, 0.002], dtype=torch.double),
+            pFStd = torch.tensor([0.003, 0.003], dtype=torch.double),
+            # Total number of generations
+            totalAug = 1,
+            # Others
+            verbose = True
+        )
